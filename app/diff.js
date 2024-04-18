@@ -12,22 +12,8 @@ const object1 = {
                     minimum_should_match: "2<67%",
                     query: "{{baseUrl}}/v1/account_links",
                     type: "best_fields",
-                    fields: [
-                      "name^2",
-                      "name_*^2",
-                      "description",
-                      "description_*",
-                      "url",
-                    ],
+                    fields: ["url", "url.wildcardUrl"],
                     tie_breaker: 1,
-                  },
-                },
-                {
-                  term: {
-                    "name.raw": {
-                      value: "{{baseUrl}}/v1/account_links",
-                      boost: 2,
-                    },
                   },
                 },
                 {
@@ -60,30 +46,54 @@ const object1 = {
                     ],
                   },
                 },
+                {
+                  bool: {
+                    must: [
+                      {
+                        match: {
+                          "url.path": {
+                            query: "{{baseUrl}}/v1/account_links",
+                            minimum_should_match: "2<67%",
+                          },
+                        },
+                      },
+                      {
+                        match: {
+                          customHostName: {
+                            query: "{{baseUrl}}/v1/account_links",
+                            minimum_should_match: "2<67%",
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               ],
               filter: {
                 bool: {
                   must: [
                     {
                       bool: {
-                        minimum_should_match: 1,
                         should: [
                           {
-                            term: {
-                              isPublic: true,
+                            match: {
+                              collectionTags: "FEATURED",
                             },
                           },
                           {
-                            term: {
-                              users: 1,
+                            match: {
+                              isPublisherVerified: true,
                             },
                           },
                           {
-                            term: {
-                              teams: 1,
+                            range: {
+                              collectionForkCount: {
+                                gte: 100,
+                              },
                             },
                           },
                         ],
+                        minimum_should_match: 1,
                       },
                     },
                   ],
@@ -116,28 +126,21 @@ const object1 = {
                         ],
                       },
                     },
+                    {
+                      terms: {
+                        type: [
+                          "ws-raw-request",
+                          "grpc-request",
+                          "ws-socketio-request",
+                        ],
+                      },
+                    },
                   ],
                 },
               },
             },
           },
           should: [
-            {
-              match: {
-                collectionName: {
-                  query: "{{baseUrl}}/v1/account_links",
-                  boost: 10,
-                },
-              },
-            },
-            {
-              match: {
-                "workspaces.name": {
-                  query: "{{baseUrl}}/v1/account_links",
-                  boost: 10,
-                },
-              },
-            },
             {
               match: {
                 "url.hostName": {
@@ -181,9 +184,16 @@ const object1 = {
             {
               match: {
                 method: {
-                  query: "{{baseUrl}}/v1/account_links",
+                  query: "GET",
                   boost: 10,
-                  analyzer: "custom_http_method",
+                },
+              },
+            },
+            {
+              match: {
+                name: {
+                  query: "ES context bar query",
+                  boost: 10,
                 },
               },
             },
@@ -235,30 +245,6 @@ const object1 = {
         },
         {
           filter: {
-            term: {
-              isPrivateNetworkEntity: true,
-            },
-          },
-          weight: 10,
-        },
-        {
-          filter: {
-            term: {
-              creatorId: 1,
-            },
-          },
-          weight: 10,
-        },
-        {
-          filter: {
-            terms: {
-              id: [],
-            },
-          },
-          weight: 30,
-        },
-        {
-          filter: {
             exists: {
               field: "curatedInList",
             },
@@ -280,6 +266,6 @@ const object1 = {
       "isDomainNonTrivial",
     ],
   },
-  from: 0,
-  size: 10,
+  from: 7,
+  size: 7,
 };
